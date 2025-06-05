@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Flood Fill Puzzle</title>
+	<style>
+		@media (max-width: 768px) {
+			h1 {
+				font-size: 20px;
+			}
+
+			#palette,
+			#preview,
+			#gameBoard,
+			#message,
+			#volume,
+			#langSelect,
+			#levelSelect {
+				width: 90vw;
+				font-size: 14px;
+			}
+
+			#palette button {
+				width: 9vw;
+				height: 9vw;
+				max-width: 32px;
+				max-height: 32px;
+			}
+
+			button,
+			select {
+				padding: 8px;
+				margin: 4px;
+			}
+
+			#installBtn {
+				bottom: 60px;
+				right: 10px;
+			}
+		}
+
+		#palette,
+		#preview,
+		#gameBoard,
+		#message {
+			padding: 0 10px;
+		}
+
+		body {
+			font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+			text-align: center;
+			background-color: #dceef9;
+			color: #2c3e50;
+			transition: background 0.3s, color 0.3s;
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+			overflow-x: hidden;
+		}
+
+		body.dark {
+			background-color: #06101f;
+			color: #cce3f5;
+		}
+
+		body.dark .cell {
+			width: 8vw;
+			height: 8vw;
+			max-width: 30px;
+			max-height: 30px;
+			border: 1px solid #ccc;
+			box-sizing: border-box;
+			transition: background-color 0.2s;
+		}
+
+
+		body.dark .cell {
+			outline-color: #eee !important;
+		}
+
+		select {
+			margin: 4px;
+			padding: 6px;
+			border-radius: 6px;
+			border: 1px solid #3498db;
+			font-size: 14px;
+			background: #e8f4fb;
+			color: #2c3e50;
+		}
+
+		#preview img {
+			display: none;
+		}
+
+		h1 {
+			font-size: 36px;
+			margin: 12px 0;
+			letter-spacing: 1px;
+		}
+
+		select,
+		button {
+			font-size: 15px;
+			padding: 6px 12px;
+			margin: 6px;
+			border-radius: 6px;
+			border: none;
+			background-color: #3498db;
+			color: white;
+			cursor: pointer;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+			transition: all 0.2s ease-in-out;
+		}
+
+		select:hover,
+		button:hover {
+			background-color: #2980b9;
+			transform: translateY(-1px);
+		}
+
+		#levelSelect {
+			background-color: #e8f4fb;
+			color: #2c3e50;
+			border: 1px solid #3498db;
+		}
+
+		#volume {
+			vertical-align: middle;
+			accent-color: #3498db;
+		}
+
+		#message {
+			font-size: 18px;
+			font-weight: bold;
+			margin-top: 10px;
+			min-height: 1.5em;
+		}
+
+		#hint {
+			margin-top: 8px;
+		}
+
+		.hint-circle {
+			display: inline-block;
+			width: 14px;
+			height: 14px;
+			border-radius: 50%;
+			margin: 0 4px;
+			border: 1px solid #444;
+		}
+
+		#gameBoard {
+			display: grid;
+			gap: 2px;
+			justify-content: center;
+			margin: 10px auto;
+			max-width: 90vw;
+			/* background-color: #d4e9f5; */
+			padding: 10px;
+			border-radius: 10px;
+			/* box-shadow: 0 0 10px rgba(0, 0, 0, 0.05); */
+		}
+
+		.cell {
+			width: 30px;
+			height: 30px;
+			border: 1px solid #ccc;
+			box-sizing: border-box;
+			transition: background-color 0.2s;
+		}
+
+		#palette button {
+			font-size: 14px;
+			margin: 6px;
+			border-radius: 50%;
+			border: none;
+			width: 30px;
+			height: 30px;
+			background: #3498db;
+			color: white;
+			cursor: pointer;
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+			transition: background 0.3s, transform 0.2s;
+		}
+
+		button:hover {
+			background: #2980b9;
+			transform: translateY(-1px);
+		}
+
+		#palette button:hover {
+			transform: scale(1.1);
+		}
+
+		#palette button.selected {
+			border: 3px solid #2c3e50;
+			box-shadow: 0 0 5px #3498db;
+		}
+
+		body.dark #palette button.selected {
+			border: 3px solid white;
+		}
+
+		.particle {
+			position: absolute;
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			pointer-events: none;
+			opacity: 1;
+			animation: fadeOut 1.6s forwards;
+			box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.6);
+			filter: blur(0.5px);
+		}
+
+		@keyframes fadeOut {
+			to {
+				transform: translate(var(--dx), var(--dy));
+				opacity: 0;
+			}
+		}
+	</style>
+	<link rel="manifest" href="manifest.json">
+	<script>
+		if ('serviceWorker' in navigator) {
+			window.addEventListener('load', () => {
+				navigator.serviceWorker.register('service-worker.js').then(registration => {
+					console.log('ServiceWorker registered:', registration);
+				}).catch(error => {
+					console.log('ServiceWorker registration failed:', error);
+				});
+			});
+		}
+	</script>
+</head>
+
+<body>
+	<select id="langSelect" onchange="setLanguage(this.value)"
+		style="position: fixed; top: 10px; right: 10px; z-index: 1000;">
+		<option value="zh-TW">繁體中文</option>
+		<option value="zh-CN">简体中文</option>
+		<option value="en">English</option>
+		<option value="ja">日本語</option>
+	</select>
+	<h1>Flood Fill Puzzle</h1>
+	<select id="levelSelect" onchange="loadLevel(parseInt(this.value))"></select>
+	<button onclick="resetLevel()">重新開始</button>
+	<button onclick="toggleHint()">顯示提示</button>
+	<button onclick="toggleDarkMode()">🌙 暗色模式</button>
+	<button id="installBtn" style="display:none; position: fixed; bottom: 10px; right: 10px; z-index: 1000;">📱
+		安裝到主畫面</button>
+	<button onclick="toggleMusic()">🎵 音樂開關</button>
+	<audio id="bgm" src="./peaceful-piano-background-music-218762.mp3" loop autoplay></audio>
+	<audio id="fillSound" src="ui-pop-sound-316482.mp3" preload="auto"></audio>
+	<label for="volume">音量</label>
+	<input type="range" id="volume" min="0" max="1" step="0.01" value="0.5" onchange="bgm.volume = this.value">
+	<div id="preview"></div>
+	<div id="palette"></div>
+	<div id="gameBoard"></div>
+	<div id="message"></div>
+	<script>
+		let levels = [];
+		let currentGrid = [];
+		let selectedColor = null;
+		let start = [0, 0];
+		let size = 0;
+		let originalGrid = [];
+		let currentLevelId = 1;
+		let hintVisible = false;
+		let usedMoves = 0;
+		let isFilling = false;
+
+
+		async function loadLevels() {
+			const res = await fetch("./flood_fill_levels.json");
+			levels = await res.json();
+			if (!localStorage.getItem("maxLevel")) {
+				localStorage.setItem("maxLevel", "1");
+			}
+			renderLevelButtons();
+			const autoLoadId = parseInt(localStorage.getItem("maxLevel") || "1");
+			loadLevel(autoLoadId);
+		}
+
+		function renderLevelButtons() {
+			const select = document.getElementById("levelSelect");
+			const lang = localStorage.getItem('lang') || 'zh-TW';
+			const t = translations[lang];
+			select.innerHTML = '';
+			const defaultOption = document.createElement("option");
+			defaultOption.textContent = t.select;
+			defaultOption.disabled = true;
+			select.appendChild(defaultOption);
+			const unlockedLevel = parseInt(localStorage.getItem("maxLevel") || "1");
+			for (let level of levels) {
+				const option = document.createElement("option");
+				const unlockedLevel = parseInt(localStorage.getItem("maxLevel") || "1");
+				if (level.id > unlockedLevel) {
+					option.disabled = true;
+					option.style.color = '#aaa';
+				}
+				option.value = level.id;
+				if (lang === 'en') {
+					option.textContent = `Level ${level.id}`;
+				} else if (lang === 'ja') {
+					option.textContent = `レベル${level.id}`;
+				} else if (lang === 'zh-CN') {
+					option.textContent = `第 ${level.id} 关`;
+				} else {
+					option.textContent = `第 ${level.id} 關`;
+				}
+				select.appendChild(option);
+			}
+
+			const maxLevel = parseInt(localStorage.getItem("maxLevel") || "1");
+			select.value = maxLevel.toString();
+		}
+
+		function loadLevel(id) {
+			const unlockedLevel = parseInt(localStorage.getItem("maxLevel") || "1");
+			if (id > unlockedLevel) return;
+			const level = levels.find(l => l.id === id);
+			if (!level) return;
+
+			currentLevelId = id;
+			currentGrid = level.grid.map(row => [...row]);
+			originalGrid = level.grid.map(row => [...row]);
+			start = level.start;
+			size = level.size;
+			hintVisible = false;
+			usedMoves = 0;
+
+			const bestKey = `best_${level.id}`;
+			const bestRecord = localStorage.getItem(bestKey);
+			const bestText = bestRecord ? `｜最佳步數：${bestRecord}` : "";
+
+			const t = translations[localStorage.getItem('lang') || 'zh-TW'];
+			document.getElementById("preview").innerHTML = `
+        <h3>${t.select.replace('請選擇想玩的關卡', '第')} ${level.id} 關｜${level.size}x${level.size}｜${t.move}: ${level.solution.length + 2} 步${bestText}</h3>
+        <p id="hint" style="display: none"></p>
+        <p id="moveCount">${t.move}：0</p>
+      `;
+
+
+			renderPalette(level.colors);
+			renderBoard();
+			document.getElementById("message").textContent = "";
+		}
+
+		function renderHintCircles(sequence) {
+			const hintContainer = document.getElementById("hint");
+			hintContainer.innerHTML = `步數：${sequence.length}<br>` + sequence.map(color => `<span class="hint-circle" style="background:${color}"></span>`).join('');
+		}
+
+		function toggleHint() {
+			const hint = document.getElementById("hint");
+			const level = levels.find(l => l.id === currentLevelId);
+			if (!level) return;
+			hintVisible = !hintVisible;
+			if (hintVisible) {
+				renderHintCircles(level.solution);
+				hint.style.display = "block";
+			} else {
+				hint.style.display = "none";
+			}
+			renderBoard();
+		}
+
+		function resetLevel() {
+			loadLevel(currentLevelId);
+		}
+
+		function renderPalette(colors) {
+			const palette = document.getElementById("palette");
+			palette.innerHTML = '';
+			colors.forEach(color => {
+				const btn = document.createElement("button");
+				btn.style.backgroundColor = color;
+				btn.className = selectedColor === color ? 'selected' : '';
+				btn.onclick = () => {
+					selectedColor = color;
+					renderPalette(colors);
+				};
+				palette.appendChild(btn);
+			});
+		}
+
+		function renderBoard() {
+			const board = document.getElementById("gameBoard");
+			board.innerHTML = '';
+			board.style.gridTemplateColumns = `repeat(${size}, 30px)`;
+			currentGrid.forEach((row, i) => {
+				row.forEach((color, j) => {
+					const cell = document.createElement("div");
+					cell.className = 'cell';
+					cell.style.backgroundColor = color;
+					if (i === start[0] && j === start[1] && hintVisible) {
+						cell.style.outline = '2px dashed black';
+					} else {
+						cell.style.outline = '';
+					}
+					cell.onclick = () => {
+						if (isFilling || !selectedColor || currentGrid[i][j] === selectedColor) return;
+						const level = levels.find(l => l.id === currentLevelId);
+						usedMoves++;
+						if (usedMoves > level.solution.length + 2) {
+							document.getElementById("message").textContent = translations[localStorage.getItem('lang') || 'zh-TW'].failed;
+							return;
+						} else {
+							document.getElementById("moveCount").textContent = `目前步數：${usedMoves}`;
+							isFilling = true;
+							floodFill(i, j, currentGrid[i][j], selectedColor, () => {
+								isFilling = false;
+								renderBoard();
+							});
+						}
+					};
+					board.appendChild(cell);
+				});
+			});
+		}
+
+		async function floodFill(x, y, fromColor, toColor, onFinish) {
+			if (fromColor === toColor || currentGrid[x][y] !== fromColor) return;
+			const visited = Array.from({ length: size }, () => Array(size).fill(false));
+			let queue = [[x, y]];
+			const delayBase = 100;
+			let step = 0;
+
+			visited[x][y] = true;
+
+			while (queue.length > 0) {
+				const nextQueue = [];
+				await new Promise(resolve => setTimeout(resolve, delayBase + Math.pow(0.5, step)));
+
+				for (const [cx, cy] of queue) {
+					currentGrid[cx][cy] = toColor;
+					renderBoard();
+					createParticles(cx, cy, toColor);
+					const fillSound = document.getElementById("fillSound");
+					if (fillSound) {
+						const newSound = fillSound.cloneNode();
+						newSound.volume = fillSound.volume;
+						newSound.play().catch(() => { });
+					}
+					checkWin();
+
+					const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+					for (const [dx, dy] of directions) {
+						const nx = cx + dx;
+						const ny = cy + dy;
+						if (
+							nx >= 0 && ny >= 0 && nx < size && ny < size &&
+							!visited[nx][ny] && currentGrid[nx][ny] === fromColor
+						) {
+							visited[nx][ny] = true;
+							nextQueue.push([nx, ny]);
+						}
+					}
+				}
+				step++;
+				queue = nextQueue;
+			}
+			if (onFinish) onFinish();
+		}
+
+
+		function checkWin() {
+			const target = currentGrid[start[0]][start[1]];
+			for (let i = 0; i < size; i++) {
+				for (let j = 0; j < size; j++) {
+					if (currentGrid[i][j] !== target) return;
+				}
+			}
+			document.getElementById("message").textContent = translations[localStorage.getItem('lang') || 'zh-TW'].win;
+			const currentId = currentLevelId;
+			const prevMax = parseInt(localStorage.getItem("maxLevel") || "1");
+			if (currentId >= prevMax) {
+				localStorage.setItem("maxLevel", currentId + 1);
+				renderLevelButtons();
+			}
+			const bestKey = `best_${currentId}`;
+			const best = parseInt(localStorage.getItem(bestKey) || "999");
+			if (usedMoves < best) {
+				localStorage.setItem(bestKey, usedMoves);
+				document.getElementById("message").textContent += translations[localStorage.getItem('lang') || 'zh-TW'].newRecord + usedMoves;
+			}
+			setTimeout(() => {
+				if (levels.find(l => l.id === currentId + 1)) {
+					loadLevel(currentId + 1);
+				}
+			}, 1000);
+		}
+
+		function createParticles(x, y, color) {
+			const board = document.getElementById("gameBoard");
+			const cells = board.querySelectorAll(".cell");
+			const index = x * size + y;
+			const cell = cells[index];
+			if (!cell) return;
+
+			const rect = cell.getBoundingClientRect();
+			const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
+			const scrollTop = window.scrollY || document.documentElement.scrollTop;
+			const originX = rect.left + scrollLeft + rect.width / 2;
+			const originY = rect.top + scrollTop + rect.height / 2;
+
+			for (let i = 0; i < 4; i++) {
+				const p = document.createElement("div");
+				p.className = "particle";
+				p.style.background = "white";
+				p.style.boxShadow = `0 0 3px 2px ${color}`;
+				const angle = Math.random() * 2 * Math.PI;
+				const distance = 80 + Math.random() * 10;
+				const dx = Math.cos(angle) * distance + "px";
+				const dy = Math.sin(angle) * distance + "px";
+				p.style.setProperty('--dx', dx);
+				p.style.setProperty('--dy', dy);
+				p.style.left = originX + 'px';
+				p.style.top = originY + 'px';
+				document.body.appendChild(p);
+				setTimeout(() => p.remove(), 1600);
+			}
+		}
+
+		loadLevels();
+	</script>
+
+	<script>
+		const bgm = document.getElementById("bgm");
+		bgm.volume = 0.5;
+		function toggleMusic() {
+			if (bgm.paused) bgm.play(); else bgm.pause();
+		}
+		function toggleDarkMode() {
+			document.body.classList.toggle("dark");
+		}
+	</script>
+
+	<script>
+		let deferredPrompt;
+		window.addEventListener('beforeinstallprompt', (e) => {
+			e.preventDefault();
+			deferredPrompt = e;
+			document.getElementById('installBtn').style.display = 'inline-block';
+		});
+
+		document.getElementById('installBtn').addEventListener('click', async () => {
+			if (!deferredPrompt) return;
+			deferredPrompt.prompt();
+			const result = await deferredPrompt.userChoice;
+			console.log('User response to A2HS:', result.outcome);
+			deferredPrompt = null;
+			document.getElementById('installBtn').style.display = 'none';
+		});
+
+		const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+		const isInStandaloneMode = 'standalone' in window.navigator && window.navigator.standalone;
+		if (isIos && !isInStandaloneMode) {
+			const tip = document.createElement("div");
+			tip.innerHTML = "📲 請使用 Safari 點擊分享選單，然後選擇『加入主畫面』即可安裝本遊戲！";
+			tip.style.padding = "10px";
+			tip.style.background = "#ffffe0";
+			tip.style.border = "1px solid #aaa";
+			tip.style.margin = "10px";
+			tip.style.fontSize = "0.9em";
+			tip.style.position = "fixed";
+			tip.style.bottom = "50px";
+			tip.style.right = "10px";
+			tip.style.zIndex = "999";
+			document.body.appendChild(tip);
+		}
+
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker.addEventListener('controllerchange', () => {
+				const bar = document.createElement('div');
+				bar.innerHTML = '🔄 發現新版本，請點此重新整理';
+				bar.style.position = 'fixed';
+				bar.style.bottom = '0';
+				bar.style.width = '100%';
+				bar.style.padding = '10px';
+				bar.style.backgroundColor = '#333';
+				bar.style.color = 'white';
+				bar.style.textAlign = 'center';
+				bar.style.cursor = 'pointer';
+				bar.onclick = () => location.reload();
+				document.body.appendChild(bar);
+			});
+		}
+
+		const translations = {
+			'zh-TW': {
+				restart: '重新開始', hint: '顯示提示', dark: '🌙 暗色模式', music: '🎵 音樂開關', select: '請選擇想玩的關卡', move: '目前步數', best: '最佳步數：', win: '🎉 恭喜通關！', newRecord: '🌟 新紀錄！最佳步數：', failed: '❌ 超出步數限制，挑戰失敗！'
+			},
+			'zh-CN': {
+				install: '添加到主畫面',
+				restart: '重新开始', hint: '显示提示', dark: '🌙 深色模式', music: '🎵 音乐开关', select: '请选择想玩的关卡', move: '当前步数', best: '最佳步数：', win: '🎉 恭喜通关！', newRecord: '🌟 新纪录！最佳步数：', failed: '❌ 超出步数限制，挑战失败！'
+			},
+			'en': {
+				install: 'Install to Home Screen',
+				restart: 'Restart', hint: 'Show Hint', dark: '🌙 Dark Mode', music: '🎵 Toggle Music', select: 'Select a level to play', move: 'Moves used', best: 'Best: ', win: '🎉 You Win!', newRecord: '🌟 New Record! Best: ', failed: '❌ Out of moves! Try again!'
+			},
+			'ja': {
+				install: 'ホーム画面に追加',
+				restart: 'やり直し', hint: 'ヒント表示', dark: '🌙 ダークモード', music: '🎵 音楽切替', select: 'レベルを選択してください', move: '現在の手数', best: 'ベスト：', win: '🎉 クリア！', newRecord: '🌟 新記録！ベスト：', failed: '❌ 手数オーバー、失敗！'
+			}
+		};
+
+		function setLanguage(lang) {
+			localStorage.setItem('lang', lang);
+			applyLanguage();
+		}
+
+		function applyLanguage() {
+			const lang = localStorage.getItem('lang') || 'zh-TW';
+			const t = translations[lang];
+			document.querySelector('button[onclick="resetLevel()"]').textContent = t.restart;
+			document.querySelector('button[onclick="toggleHint()"]').textContent = t.hint;
+			document.querySelector('button[onclick="toggleDarkMode()"]').textContent = t.dark;
+			document.querySelector('button[onclick="toggleMusic()"]').textContent = t.music;
+			const installBtn = document.getElementById('installBtn');
+			if (installBtn) installBtn.innerHTML = '📱 ' + (t.install || '安裝到主畫面');
+			const defaultOption = document.querySelector('#levelSelect option[disabled]');
+			if (defaultOption) defaultOption.textContent = t.select;
+
+			renderLevelButtons();
+
+			// 如果目前有載入的關卡，重繪 preview
+			if (typeof currentLevelId !== 'undefined' && levels.length > 0) {
+				const level = levels.find(l => l.id === currentLevelId);
+				if (level) {
+					const bestKey = `best_${level.id}`;
+					const bestRecord = localStorage.getItem(bestKey);
+					const bestText = bestRecord ? `｜${t.best}${bestRecord}` : "";
+					document.getElementById("preview").innerHTML = `
+        <h3>${t.select.replace('請選擇想玩的關卡', '第')} ${level.id} 關｜${level.size}x${level.size}｜${t.move}: ${level.solution.length + 2} 步${bestText}</h3>
+        <p id="hint" style="display: ${hintVisible ? 'block' : 'none'}"></p>
+        <p id="moveCount">${t.move}：${usedMoves}</p>
+      `;
+					if (hintVisible) renderHintCircles(level.solution);
+				}
+			}
+		}
+
+		document.addEventListener('DOMContentLoaded', () => {
+			const lang = localStorage.getItem('lang') || 'zh-TW';
+			document.getElementById('langSelect').value = lang;
+			localStorage.setItem('lang', lang);
+			applyLanguage();
+		});
+	</script>
+</body>
+
+</html>
