@@ -13,38 +13,9 @@
 			#palette,
 			#preview,
 			#gameBoard,
-			#message,
-			#volume,
-			#langSelect,
-			#levelSelect {
-				width: 90vw;
-				font-size: 14px;
+			#message {
+				padding: 0 10px;
 			}
-
-			#palette button {
-				width: 9vw;
-				height: 9vw;
-				max-width: 32px;
-				max-height: 32px;
-			}
-
-			button,
-			select {
-				padding: 8px;
-				margin: 4px;
-			}
-
-			#installBtn {
-				bottom: 60px;
-				right: 10px;
-			}
-		}
-
-		#palette,
-		#preview,
-		#gameBoard,
-		#message {
-			padding: 0 10px;
 		}
 
 		body {
@@ -60,8 +31,8 @@
 		}
 
 		body.dark {
-			background-color: #06101f;
-			color: #cce3f5;
+			background-color: #0c1a2b;
+			color: #eee;
 		}
 
 		body.dark .cell {
@@ -220,6 +191,34 @@
 				opacity: 0;
 			}
 		}
+
+		.container {
+			max-width: 500px;
+			width: 100%;
+			margin: auto;
+			padding: 10px;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: flex-start;
+		}
+
+		.row {
+			display: flex;
+			justify-content: center;
+			gap: 8px;
+			margin: 8px 0;
+			flex-wrap: wrap;
+		}
+
+		.row select,
+		.row button,
+		.row input[type="range"] {
+			flex: 1;
+			min-width: 150px;
+			max-width: 150px;
+			box-sizing: border-box;
+		}
 	</style>
 	<link rel="manifest" href="manifest.json">
 	<script>
@@ -243,22 +242,30 @@
 		<option value="en">English</option>
 		<option value="ja">日本語</option>
 	</select>
-	<h1>Flood Fill Puzzle</h1>
-	<select id="levelSelect" onchange="loadLevel(parseInt(this.value))"></select>
-	<button onclick="resetLevel()">重新開始</button>
-	<button onclick="toggleHint()">顯示提示</button>
-	<button onclick="toggleDarkMode()">🌙 暗色模式</button>
-	<button id="installBtn" style="display:none; position: fixed; bottom: 10px; right: 10px; z-index: 1000;">📱
-		安裝到主畫面</button>
-	<button onclick="toggleMusic()">🎵 音樂開關</button>
-	<audio id="bgm" src="./peaceful-piano-background-music-218762.mp3" loop autoplay></audio>
-	<audio id="fillSound" src="ui-pop-sound-316482.mp3" preload="auto"></audio>
-	<label for="volume">音量</label>
-	<input type="range" id="volume" min="0" max="1" step="0.01" value="0.5" onchange="bgm.volume = this.value">
-	<div id="preview"></div>
-	<div id="palette"></div>
-	<div id="gameBoard"></div>
-	<div id="message"></div>
+	<div class="container">
+		<h1>Flood Fill Puzzle</h1>
+		<div class="row">
+			<select id="levelSelect" onchange="loadLevel(parseInt(this.value))"></select>
+			<button onclick="resetLevel()">🔄 重新開始</button>
+		</div>
+		<div class="row">
+			<button onclick="toggleHint()">💡 顯示提示</button>
+			<button onclick="toggleDarkMode()">🌙 暗色模式</button>
+		</div>
+		<div class="row">
+			<button onclick="toggleMusic()">🎵 音樂開關</button>
+			<!-- <label for="volume">音量</label> -->
+			<input type="range" id="volume" min="0" max="1" step="0.01" value="0.5" onchange="bgm.volume = this.value">
+		</div>
+		<button id="installBtn" style="display:none; position: fixed; bottom: 10px; right: 10px; z-index: 1000;">📱
+			安裝到主畫面</button>
+		<audio id="bgm" src="./peaceful-piano-background-music-218762.mp3" loop autoplay></audio>
+		<audio id="fillSound" src="ui-pop-sound-316482.mp3" preload="auto"></audio>
+		<div id="preview"></div>
+		<div id="palette"></div>
+		<div id="gameBoard"></div>
+		<div id="message"></div>
+	</div>
 	<script>
 		let levels = [];
 		let currentGrid = [];
@@ -337,7 +344,7 @@
 
 			const t = translations[localStorage.getItem('lang') || 'zh-TW'];
 			document.getElementById("preview").innerHTML = `
-        <h3>${t.select.replace('請選擇想玩的關卡', '第')} ${level.id} 關｜${level.size}x${level.size}｜${t.move}: ${level.solution.length + 2} 步${bestText}</h3>
+        <h3>${t.select.replace('請選擇想玩的關卡', '第')} ${level.id} 關｜${level.size}x${level.size}｜${t.limitMove}: ${level.solution.length + 2} 步${bestText}</h3>
         <p id="hint" style="display: none"></p>
         <p id="moveCount">${t.move}：0</p>
       `;
@@ -591,19 +598,19 @@
 
 		const translations = {
 			'zh-TW': {
-				restart: '重新開始', hint: '顯示提示', dark: '🌙 暗色模式', music: '🎵 音樂開關', select: '請選擇想玩的關卡', move: '目前步數', best: '最佳步數：', win: '🎉 恭喜通關！', newRecord: '🌟 新紀錄！最佳步數：', failed: '❌ 超出步數限制，挑戰失敗！'
+				restart: '🔄 重新開始', hint: '💡 顯示提示', dark: '🌙 暗色模式', music: '🎵 音樂開關', select: '請選擇想玩的關卡', limitMove: '限制步數', move: '目前步數', best: '最佳步數：', win: '🎉 恭喜通關！', newRecord: '🌟 新紀錄！最佳步數：', failed: '❌ 超出步數限制，挑戰失敗！'
 			},
 			'zh-CN': {
 				install: '添加到主畫面',
-				restart: '重新开始', hint: '显示提示', dark: '🌙 深色模式', music: '🎵 音乐开关', select: '请选择想玩的关卡', move: '当前步数', best: '最佳步数：', win: '🎉 恭喜通关！', newRecord: '🌟 新纪录！最佳步数：', failed: '❌ 超出步数限制，挑战失败！'
+				restart: '🔄 重新开始', hint: '💡 显示提示', dark: '🌙 深色模式', music: '🎵 音乐开关', select: '请选择想玩的关卡', limitMove: '限制步数', move: '当前步数', best: '最佳步数：', win: '🎉 恭喜通关！', newRecord: '🌟 新纪录！最佳步数：', failed: '❌ 超出步数限制，挑战失败！'
 			},
 			'en': {
 				install: 'Install to Home Screen',
-				restart: 'Restart', hint: 'Show Hint', dark: '🌙 Dark Mode', music: '🎵 Toggle Music', select: 'Select a level to play', move: 'Moves used', best: 'Best: ', win: '🎉 You Win!', newRecord: '🌟 New Record! Best: ', failed: '❌ Out of moves! Try again!'
+				restart: '🔄 Restart', hint: '💡 Show Hint', dark: '🌙 Dark Mode', music: '🎵 Toggle Music', select: 'Select a level to play', limitMove: 'Moves limited', move: 'Moves used', best: 'Best: ', win: '🎉 You Win!', newRecord: '🌟 New Record! Best: ', failed: '❌ Out of moves! Try again!'
 			},
 			'ja': {
 				install: 'ホーム画面に追加',
-				restart: 'やり直し', hint: 'ヒント表示', dark: '🌙 ダークモード', music: '🎵 音楽切替', select: 'レベルを選択してください', move: '現在の手数', best: 'ベスト：', win: '🎉 クリア！', newRecord: '🌟 新記録！ベスト：', failed: '❌ 手数オーバー、失敗！'
+				restart: '🔄 やり直し', hint: '💡 ヒント表示', dark: '🌙 ダークモード', music: '🎵 音楽切替', select: 'レベルを選択してください', limitMove: '制限の手数', move: '現在の手数', best: 'ベスト：', win: '🎉 クリア！', newRecord: '🌟 新記録！ベスト：', failed: '❌ 手数オーバー、失敗！'
 			}
 		};
 
@@ -634,7 +641,7 @@
 					const bestRecord = localStorage.getItem(bestKey);
 					const bestText = bestRecord ? `｜${t.best}${bestRecord}` : "";
 					document.getElementById("preview").innerHTML = `
-        <h3>${t.select.replace('請選擇想玩的關卡', '第')} ${level.id} 關｜${level.size}x${level.size}｜${t.move}: ${level.solution.length + 2} 步${bestText}</h3>
+        <h3>${t.select.replace('請選擇想玩的關卡', '第')} ${level.id} 關｜${level.size}x${level.size}｜${t.limitMove}: ${level.solution.length + 2} 步${bestText}</h3>
         <p id="hint" style="display: ${hintVisible ? 'block' : 'none'}"></p>
         <p id="moveCount">${t.move}：${usedMoves}</p>
       `;
