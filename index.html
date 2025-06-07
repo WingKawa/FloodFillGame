@@ -248,6 +248,7 @@
 		<div class="row">
 			<select id="levelSelect" onchange="loadLevel(parseInt(this.value))"></select>
 			<select id="langSelect" onchange="setLanguage(this.value)">
+				<option value="">切換語言</option>
 				<option value="zh-TW">繁體中文</option>
 				<option value="zh-CN">简体中文</option>
 				<option value="en">English</option>
@@ -260,7 +261,7 @@
 		</div>
 		<div class="row">
 			<button onclick="resetLevel()">重新開始</button>
-			<button onclick="toggleHint()">顯示提示</button>	
+			<button onclick="toggleHint()">顯示提示</button>
 		</div>
 		<audio id="bgm" src="./peaceful-piano-background-music-218762.mp3" loop autoplay></audio>
 		<audio id="fillSound" src="ui-pop-sound-316482.mp3" preload="auto"></audio>
@@ -268,7 +269,8 @@
 		<div id="palette"></div>
 		<div id="gameBoard"></div>
 		<div id="message"></div>
-		<button id="installBtn" style="display: inline-block; position: fixed; bottom: 10px; right: 10px; z-index: 1000;">📱安裝到主畫面</button>
+		<button id="installBtn"
+			style="display: inline-block; position: fixed; bottom: 10px; right: 10px; z-index: 1000;">📱安裝到主畫面</button>
 	</div>
 	<script>
 		let levels = [];
@@ -619,6 +621,8 @@
 		};
 
 		function setLanguage(lang) {
+			const langSelect = document.getElementById('langSelect');
+			if (langSelect) langSelect.selectedIndex = 0;
 			localStorage.setItem('lang', lang);
 			applyLanguage();
 		}
@@ -632,6 +636,15 @@
 			};
 			const lang = localStorage.getItem('lang') || 'zh-TW';
 			const t = translations[lang];
+			const langSelect = document.getElementById('langSelect');
+			if (langSelect) {
+				langSelect.options[0].textContent = {
+					'zh-TW': '切換語言',
+					'zh-CN': '切换语言',
+					'en': 'Change Language',
+					'ja': '言語を変更'
+				}[lang];
+			}
 			document.querySelector('button[onclick="resetLevel()"]').textContent = t.restart;
 			document.querySelector('button[onclick="toggleHint()"]').textContent = t.hint;
 			document.querySelector('button[onclick="toggleDarkMode()"]').textContent = t.dark;
@@ -663,9 +676,13 @@
 
 		document.addEventListener('DOMContentLoaded', () => {
 			const lang = localStorage.getItem('lang') || 'zh-TW';
-			document.getElementById('langSelect').value = lang;
+			// document.getElementById('langSelect').value = lang;
 			localStorage.setItem('lang', lang);
 			applyLanguage();
+
+			if (window.matchMedia('(display-mode: standalone)').matches) {
+				document.getElementById('installBtn').style.display = 'none';
+			}
 		});
 	</script>
 </body>
