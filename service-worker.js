@@ -1,4 +1,4 @@
-const CACHE_NAME = "flood-fill-cache-v1.20250607";
+const CACHE_NAME = "flood-fill-cache-v1.20250608";
 const urlsToCache = [
   "./",
   "./index.html",
