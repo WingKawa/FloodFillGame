@@ -284,6 +284,31 @@
 		let usedMoves = 0;
 		let isFilling = false;
 
+		const SOUND_POOL_SIZE = 20;
+		let fillSoundPool = [];
+
+		function initSoundPool() {
+			const baseSound = document.getElementById("fillSound");
+			fillSoundPool = [];
+			for (let i = 0; i < SOUND_POOL_SIZE; i++) {
+				const sound = baseSound.cloneNode();
+				sound.volume = baseSound.volume;
+				fillSoundPool.push(sound);
+				document.body.appendChild(sound);
+			}
+		}
+
+		function playFillSound() {
+			for (let i = 0; i < SOUND_POOL_SIZE; i++) {
+				const sound = fillSoundPool[i];
+				if (sound.paused || sound.ended) {
+					sound.currentTime = 0;
+					sound.play().catch(() => { });
+					break;
+				}
+			}
+		}
+
 
 		async function loadLevels() {
 			const res = await fetch("./flood_fill_levels.json");
@@ -462,12 +487,7 @@
 					currentGrid[cx][cy] = toColor;
 					renderBoard();
 					createParticles(cx, cy, toColor);
-					const fillSound = document.getElementById("fillSound");
-					if (fillSound) {
-						const newSound = fillSound.cloneNode();
-						newSound.volume = fillSound.volume;
-						newSound.play().catch(() => { });
-					}
+					playFillSound();
 					checkWin();
 
 					const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -490,41 +510,6 @@
 				requestAnimationFrame(processQueue);
 			}
 			requestAnimationFrame(processQueue);
-
-			/*while (queue.length > 0) {
-				const nextQueue = [];
-				await new Promise(resolve => setTimeout(resolve, delayBase + Math.pow(0.5, step)));
-
-				for (const [cx, cy] of queue) {
-					currentGrid[cx][cy] = toColor;
-					renderBoard();
-					createParticles(cx, cy, toColor);
-					const fillSound = document.getElementById("fillSound");
-					if (fillSound) {
-						const newSound = fillSound.cloneNode();
-						newSound.volume = fillSound.volume;
-						newSound.play().catch(() => { });
-					}
-					checkWin();
-
-					const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-					for (const [dx, dy] of directions) {
-						const nx = cx + dx;
-						const ny = cy + dy;
-						if (
-							nx >= 0 && ny >= 0 && nx < size && ny < size &&
-							!visited[nx][ny] && currentGrid[nx][ny] === fromColor
-						) {
-							visited[nx][ny] = true;
-							nextQueue.push([nx, ny]);
-						}
-					}
-				}
-				step++;
-				queue = nextQueue;
-			}
-			if (onFinish) onFinish();
-			*/
 		}
 
 
@@ -717,13 +702,14 @@
 
 		document.addEventListener('DOMContentLoaded', () => {
 			const lang = localStorage.getItem('lang') || 'zh-TW';
-			// document.getElementById('langSelect').value = lang;
 			localStorage.setItem('lang', lang);
 			applyLanguage();
 
 			if (window.matchMedia('(display-mode: standalone)').matches) {
 				document.getElementById('installBtn').style.display = 'none';
 			}
+
+			initSoundPool();
 		});
 	</script>
 	<script>
@@ -756,6 +742,11 @@
 			document.body.appendChild(tip);
 		}
 	</script>
+
+	<script>
+		
+	</script>
+
 </body>
 
 </html>
