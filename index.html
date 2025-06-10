@@ -284,6 +284,7 @@
 		let usedMoves = 0;
 		let isFilling = false;
 
+		const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 		const SOUND_POOL_SIZE = 20;
 		let fillSoundPool = [];
 
@@ -464,7 +465,28 @@
 			const visited = Array.from({ length: size }, () => Array(size).fill(false));
 			let queue = [[x, y]];
 			visited[x][y] = true;
-			const delayBase = 100;
+
+			if (isIOS) {
+				while (queue.length > 0) {
+					const [cx, cy] = queue.shift();
+					currentGrid[cx][cy] = toColor;
+					createParticles(cx, cy, toColor);
+					const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+					for (const [dx, dy] of directions) {
+						const nx = cx + dx;
+						const ny = cy + dy;
+						if (nx >= 0 && ny >= 0 && nx < size && ny < size && !visited[nx][ny] && currentGrid[nx][ny] === fromColor) {
+							visited[nx][ny] = true;
+							queue.push([nx, ny]);
+						}
+					}
+				}
+				playFillSound();
+				checkWin();
+				if (onFinish) onFinish();
+				return;
+			}
+
 			let step = 0;
 			let frameCount = 0;
 			const framesPerStep = 20;
@@ -744,7 +766,7 @@
 	</script>
 
 	<script>
-		
+
 	</script>
 
 </body>
